@@ -21,7 +21,7 @@ import re
 
 from ok import ConfigOption
 
-version = "v0.1.0"
+version = "v0.1.1"
 # 版本号由打包流程自动改写，请勿手工修改
 
 app_profile = os.environ.get("PYAPPIFY_APP_PROFILE", "")
