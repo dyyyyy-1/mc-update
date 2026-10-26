@@ -23,7 +23,14 @@ class SkillLoopTask(MyBaseTask):
     - 每个键独立开关、独立间隔，互不干扰（不是固定连招顺序）；
     - 间隔精确计时，不叠加全局点击随机抖动，避免技能节奏漂移；
     - 按键按下时长默认 0.15s，满足 Minecraft 50ms 刻采样，过短会被整刻丢弃。
+
+    子类可通过覆盖 ``skill_defs`` 收窄技能集合，``skill_defs`` 的排列顺序同时决定
+    同一时刻多个技能同时到期时的施放顺序（靠前者先按），循环内核无需改动。
     """
+
+    # 本任务支持的技能集合：(发送给游戏的键, GUI 显示名, 默认间隔秒)
+    skill_defs = SKILLS
+    loop_label = "技能循环"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -31,7 +38,7 @@ class SkillLoopTask(MyBaseTask):
         self.description = "Q/R/F/G 四个技能独立开关与独立间隔，到点自动施放，循环执行。"
         self.icon = FluentIcon.SYNC
 
-        for key, label, interval in SKILLS:
+        for key, label, interval in self.skill_defs:
             self.default_config[f"{label} 启用"] = key == "q"
             self.default_config[f"{label} 间隔(秒)"] = interval
         self.default_config.update({
@@ -39,7 +46,7 @@ class SkillLoopTask(MyBaseTask):
             "启动后延迟": 1.0,
         })
 
-        for key, label, _ in SKILLS:
+        for key, label, _ in self.skill_defs:
             self.config_description[f"{label} 启用"] = f"是否循环施放 {label.upper()} 键。"
             self.config_description[f"{label} 间隔(秒)"] = (
                 f"{label.upper()} 的施放间隔，单位秒，最小 {MIN_INTERVAL} 秒。")
@@ -51,7 +58,7 @@ class SkillLoopTask(MyBaseTask):
     def run(self):
         skills = self._build_skills()
         if not skills:
-            self.log_warning("四个技能都没有启用，任务结束。请至少开启一个技能。", notify=True)
+            self.log_warning("没有启用任何技能，任务结束。请至少开启一个技能。", notify=True)
             return
 
         press = self._clamp_float("按键按下时长", 0.15, 0.05, 1.0)
@@ -59,7 +66,7 @@ class SkillLoopTask(MyBaseTask):
 
         plan = "，".join(
             f"{s['label']} 每 {s['interval']:.1f}s" for s in skills)
-        self.log_info(f"技能循环启动：{plan}；按键时长 {press:.2f}s", notify=True)
+        self.log_info(f"{self.loop_label}启动：{plan}；按键时长 {press:.2f}s", notify=True)
         if delay > 0:
             self.sleep(delay)
 
@@ -90,7 +97,7 @@ class SkillLoopTask(MyBaseTask):
 
     def _build_skills(self):
         skills = []
-        for key, label, default_interval in SKILLS:
+        for key, label, default_interval in self.skill_defs:
             if not bool(self.config.get(f"{label} 启用", False)):
                 continue
             interval = self._clamp_float(

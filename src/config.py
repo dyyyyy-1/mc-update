@@ -21,7 +21,7 @@ import re
 
 from ok import ConfigOption
 
-version = "v0.1.1"
+version = "v0.1.2"
 # 版本号由打包流程自动改写，请勿手工修改
 
 app_profile = os.environ.get("PYAPPIFY_APP_PROFILE", "")
@@ -147,6 +147,7 @@ config = {
 
     # 用户手动触发的任务：新任务在此登记，模块路径 + 类名
     'onetime_tasks': [
+        ["src.tasks.QRFarmTask", "QRFarmTask"],
         ["src.tasks.SkillLoopTask", "SkillLoopTask"],
         ["src.tasks.TemplateTask", "TemplateTask"],
         ["src.tasks.InputProbeTask", "InputProbeTask"],
